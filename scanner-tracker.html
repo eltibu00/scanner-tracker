@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Device Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: #edf2f7;
+        }
+
+        .tab.active {
+            background: #1e40af;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .metric-value.success {
+            color: #48bb78;
+        }
+
+        .metric-value.warning {
+            color: #ed8936;
+        }
+
+        .metric-value.danger {
+            color: #f56565;
+        }
+
+        .metric-value.info {
+            color: #4299e1;
+        }
+
+        .form-section {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2563eb;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-gray {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-gray:hover {
+            background: #4b5563;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-out {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-available {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-working {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-fair {
+            background: #fef5e7;
+            color: #975a16;
+        }
+
+        .status-poor {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-repair {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .status-retired {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #2d3748;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .quick-action-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #a0aec0;
+        }
+
+        .time-badge {
+            font-size: 0.875rem;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .dept-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .dept-ecom {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .dept-b2b {
+            background: #e9d8fd;
+            color: #44337a;
+        }
+
+        .dept-flex {
+            background: #fbb6ce;
+            color: #702459;
+        }
+
+        /* Login Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.75rem;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-header p {
+            color: #718096;
+        }
+
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            color: #6b7280;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .header-user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📱 Scanner Device Tracker</h1>
+        <p>Real-time scanner management and tracking</p>
+        <div class="header-user-info">
+            <span class="user-badge" id="userBadge" style="display: none;">
+                👤 <span id="currentUserName"></span>
+            </span>
+            <button class="logout-btn" id="logoutBtn" style="display: none;" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal active">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 Scanner Tracker Login</h2>
+                <p>Please scan your badge or enter your name to continue</p>
+            </div>
+            <div class="form-group">
+                <label for="loginName">Your Name *</label>
+                <input type="text" id="loginName" placeholder="Scan your badge or enter your name" autofocus>
+            </div>
+            <div class="button-group" style="margin-top: 1.5rem;">
+                <button class="btn btn-primary" style="width: 100%;" onclick="login()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Alert Messages -->
+        <div id="successAlert" class="alert success"></div>
+        <div id="errorAlert" class="alert error"></div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('checkout')">Check Out/In</button>
+            <button class="tab" onclick="showTab('currently-out')">Currently Out</button>
+            <button class="tab" onclick="showTab('inventory')">Scanner Inventory</button>
+            <button class="tab" onclick="showTab('add-device')">Add Device</button>
+            <button class="tab" onclick="showTab('retired')">Retired Devices</button>
+            <button class="tab" onclick="showTab('activity-log')">Activity Log</button>
+        </div>
+
+        <!-- Dashboard Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Total Active Scanners</div>
+                <div class="metric-value info" id="totalActive">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Currently Out</div>
+                <div class="metric-value danger" id="currentlyOut">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Available</div>
+                <div class="metric-value success" id="available">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Needs Repair</div>
+                <div class="metric-value warning" id="needsRepair">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Retired</div>
+                <div class="metric-value" id="retired">0</div>
+            </div>
+        </div>
+
+        <!-- Tab 1: Check Out/In -->
+        <div id="tab-checkout" class="tab-content active">
+            <div class="form-section">
+                <h2 class="section-title">📤 Check Out Scanner</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="deviceIdOut">Device ID *</label>
+                        <input type="text" id="deviceIdOut" placeholder="Scan or enter device ID" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="associateOut">Checked Out To *</label>
+                        <input type="text" id="associateOut" placeholder="Scan or enter associate name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="departmentOut">Department *</label>
+                        <select id="departmentOut" required>
+                            <option value="">Select Department</option>
+                            <option value="Ecom">Ecom</option>
+                            <option value="B2B">B2B</option>
+                            <option value="Flex">Flex</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="conditionOut">Condition *</label>
+                        <select id="conditionOut" required>
+                            <option value="">Select Condition</option>
+                            <option value="Working">Working</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                            <option value="Needs Repair">Needs Repair</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notesOut">Notes (Optional)</label>
+                    <textarea id="notesOut" placeholder="Add any notes..."></textarea>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="checkOutScanner()">Check Out Scanner</button>
+                    <button class="btn btn-gray" onclick="clearCheckOutForm()">Clear Form</button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="section-title">📥 Check In Scanner</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="deviceIdIn">Device ID *</label>
+                        <input type="text" id="deviceIdIn" placeholder="Scan or enter device ID to check in" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="conditionIn">Return Condition *</label>
+                        <select id="conditionIn" required>
+                            <option value="">Select Condition</option>
+                            <option value="Working">Working</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                            <option value="Needs Repair">Needs Repair</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notesIn">Notes (Optional)</label>
+                    <textarea id="notesIn" placeholder="Add any notes about the return..."></textarea>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="checkInScanner()">Check In Scanner</button>
+                    <button class="btn btn-danger" onclick="retireScanner()">Retire Device</button>
+                    <button class="btn btn-gray" onclick="clearCheckInForm()">Clear Form</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Currently Out -->
+        <div id="tab-currently-out" class="tab-content">
+            <div class="form-section">
+                <h2 class="section-title">🔴 Scanners Currently Checked Out</h2>
+                <div style="overflow-x: auto;">
+                    <table id="currentlyOutTable">
+                        <thead>
+                            <tr>
+                                <th>Device ID</th>
+                                <th>Associate</th>
+                                <th>Department</th>
+                                <th>Checked Out</th>
+                                <th>Duration</th>
+                                <th>Condition</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Scanner Inventory -->
+        <div id="tab-inventory" class="tab-content">
+            <div class="form-section">
+                <h2 class="section-title">📋 Scanner Inventory</h2>
+                <div style="overflow-x: auto;">
+                    <table id="inventoryTable">
+                        <thead>
+                            <tr>
+                                <th>Device ID</th>
+                                <th>Status</th>
+                                <th>Current User</th>
+                                <th>Department</th>
+                                <th>Condition</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Add Device -->
+        <div id="tab-add-device" class="tab-content">
+            <div class="form-section">
+                <h2 class="section-title">➕ Add New Scanner to Inventory</h2>
+                <p style="margin-bottom: 1.5rem; color: #718096;">Register a new scanner device in the system. This creates an initial record for the device.</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="newDeviceId">Device ID *</label>
+                        <input type="text" id="newDeviceId" placeholder="Enter unique device ID (e.g., SCAN001)" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newDeviceCondition">Initial Condition *</label>
+                        <select id="newDeviceCondition" required>
+                            <option value="">Select Condition</option>
+                            <option value="Working" selected>Working</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                            <option value="Needs Repair">Needs Repair</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newDeviceSerial">Serial Number (Optional)</label>
+                        <input type="text" id="newDeviceSerial" placeholder="Enter serial number">
+                    </div>
+                    <div class="form-group">
+                        <label for="newDeviceModel">Model (Optional)</label>
+                        <input type="text" id="newDeviceModel" placeholder="Enter scanner model">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newDeviceNotes">Notes (Optional)</label>
+                    <textarea id="newDeviceNotes" placeholder="Add any notes about this device..."></textarea>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="addNewDevice()">Add Device to Inventory</button>
+                    <button class="btn btn-gray" onclick="clearAddDeviceForm()">Clear Form</button>
+                </div>
+            </div>
+
+            <div class="form-section" style="margin-top: 2rem;">
+                <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: #2d3748;">💡 Tips for Managing Devices</h3>
+                <ul style="list-style: disc; margin-left: 1.5rem; color: #4a5568; line-height: 1.8;">
+                    <li>Use consistent Device ID format (e.g., SCAN001, SCAN002, etc.)</li>
+                    <li>Record serial numbers for warranty and support purposes</li>
+                    <li>New devices automatically show as "Available" in inventory</li>
+                    <li>You can check out the device immediately after adding it</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab 5: Retired Devices -->
+        <div id="tab-retired" class="tab-content">
+            <div class="form-section">
+                <h2 class="section-title">🗃️ Retired Devices</h2>
+                <p style="margin-bottom: 1.5rem; color: #718096;">Devices that have been permanently removed from active service due to damage, age, or other reasons.</p>
+                <div style="overflow-x: auto;">
+                    <table id="retiredTable">
+                        <thead>
+                            <tr>
+                                <th>Device ID</th>
+                                <th>Retired Date</th>
+                                <th>Last User</th>
+                                <th>Last Department</th>
+                                <th>Reason/Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 6: Activity Log -->
+        <div id="tab-activity-log" class="tab-content">
+            <div class="form-section">
+                <h2 class="section-title">📜 Activity Log</h2>
+                <div style="overflow-x: auto;">
+                    <table id="activityLogTable">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                                <th>Processed By</th>
+                                <th>Device ID</th>
+                                <th>Checked Out To</th>
+                                <th>Department</th>
+                                <th>Condition</th>
+                                <th>Returned</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script>
+        // GOOGLE SHEETS CONFIGURATION
+        let SHEET_ID = '1y-pXbs_Ngvl1v627Nz1foQVFC7HvedokFTAhxk8Mox8'; // Your Google Sheet ID
+        const SHEET_NAME = 'ScannerLog'; // Sheet tab name
+        let APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4XOXmCy2AtYH1Xquz4DvvnK5y2sqZ43qVFmAH8VXYDE3aA0Iqh-QZzqJfEENUge6AqQ/exec'; // Your Web App URL
+
+        let scannerData = [];
+        let currentlyOutData = [];
+        let currentUser = null;
+
+        // Function to write data to Google Sheets
+        async function writeToGoogleSheets(data) {
+            if (!APPS_SCRIPT_URL) {
+                console.warn('Apps Script URL not configured');
+                return false;
+            }
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // Note: no-cors mode doesn't allow reading the response
+                // We'll assume success if no error is thrown
+                return true;
+            } catch (error) {
+                console.error('Error writing to Google Sheets:', error);
+                return false;
+            }
+        }
+
+        // Login Management
+        function login() {
+            const name = document.getElementById('loginName').value.trim();
+            
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+
+            // Store user in localStorage for session persistence
+            currentUser = name;
+            localStorage.setItem('scannerTrackerUser', name);
+            
+            // Hide login modal
+            document.getElementById('loginModal').classList.remove('active');
+            
+            // Show user info in header
+            document.getElementById('currentUserName').textContent = name;
+            document.getElementById('userBadge').style.display = 'inline-flex';
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+            
+            // Load data if SHEET_ID is configured
+            if (SHEET_ID) {
+                loadDataFromGoogleSheets();
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                currentUser = null;
+                localStorage.removeItem('scannerTrackerUser');
+                
+                // Hide user info
+                document.getElementById('userBadge').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'none';
+                
+                // Show login modal
+                document.getElementById('loginModal').classList.add('active');
+                document.getElementById('loginName').value = '';
+            }
+        }
+
+        // Check for existing login on page load
+        function checkExistingLogin() {
+            const savedUser = localStorage.getItem('scannerTrackerUser');
+            if (savedUser) {
+                currentUser = savedUser;
+                document.getElementById('loginName').value = savedUser;
+                document.getElementById('currentUserName').textContent = savedUser;
+                document.getElementById('userBadge').style.display = 'inline-flex';
+                document.getElementById('logoutBtn').style.display = 'inline-block';
+                document.getElementById('loginModal').classList.remove('active');
+                
+                // Load data
+                if (SHEET_ID) {
+                    loadDataFromGoogleSheets();
+                } else {
+                    // Load sample data for demo
+                    loadSampleData();
+                }
+            }
+        }
+
+        // Enter key to login
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginName').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+            
+            checkExistingLogin();
+        });
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Load data from Google Sheets
+        async function loadDataFromGoogleSheets() {
+            if (!SHEET_ID) {
+                showError('Please configure Google Sheets ID in the code');
+                return;
+            }
+
+            try {
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+                
+                const csvText = await response.text();
+                
+                Papa.parse(csvText, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        scannerData = results.data;
+                        processData();
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Unable to load data from Google Sheets');
+            }
+        }
+
+        function processData() {
+            // Calculate currently out scanners
+            currentlyOutData = scannerData.filter(row => 
+                row.Action === 'Out' && (!row.Returned || row.Returned === '')
+            );
+
+            updateMetrics();
+            updateCurrentlyOutTable();
+            updateInventoryTable();
+            updateRetiredTable();
+            updateActivityLogTable();
+        }
+
+        function updateMetrics() {
+            const uniqueDevices = [...new Set(scannerData.map(r => r.DeviceID))];
+            const retiredDevices = scannerData.filter(r => r.Action === 'Retired');
+            const activeDevices = uniqueDevices.length - retiredDevices.length;
+            const needsRepair = scannerData.filter(r => 
+                r.Condition === 'Needs Repair' && r.Action !== 'Retired'
+            );
+
+            document.getElementById('totalActive').textContent = activeDevices;
+            document.getElementById('currentlyOut').textContent = currentlyOutData.length;
+            document.getElementById('available').textContent = Math.max(0, activeDevices - currentlyOutData.length);
+            document.getElementById('needsRepair').textContent = needsRepair.length;
+            document.getElementById('retired').textContent = retiredDevices.length;
+        }
+
+        function updateCurrentlyOutTable() {
+            const tbody = document.querySelector('#currentlyOutTable tbody');
+            tbody.innerHTML = '';
+
+            if (currentlyOutData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">✓ No scanners currently checked out</td></tr>';
+                return;
+            }
+
+            currentlyOutData.forEach(row => {
+                const checkoutTime = new Date(row.Timestamp);
+                const duration = calculateDuration(checkoutTime);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${row.DeviceID}</strong></td>
+                    <td>${row.Associate}</td>
+                    <td><span class="dept-badge dept-${row.Department.toLowerCase()}">${row.Department}</span></td>
+                    <td>${formatDateTime(checkoutTime)}</td>
+                    <td class="time-badge">${duration}</td>
+                    <td><span class="status-badge status-${row.Condition.toLowerCase().replace(' ', '-')}">${row.Condition}</span></td>
+                    <td><button class="btn btn-secondary quick-action-btn" onclick="quickCheckIn('${row.DeviceID}')">Check In</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateInventoryTable() {
+            const tbody = document.querySelector('#inventoryTable tbody');
+            tbody.innerHTML = '';
+
+            // Get unique devices with their latest status
+            const deviceMap = {};
+            scannerData.forEach(row => {
+                if (!deviceMap[row.DeviceID] || new Date(row.Timestamp) > new Date(deviceMap[row.DeviceID].Timestamp)) {
+                    deviceMap[row.DeviceID] = row;
+                }
+            });
+
+            const devices = Object.values(deviceMap);
+
+            devices.forEach(device => {
+                const isOut = device.Action === 'Out' && (!device.Returned || device.Returned === '');
+                const status = device.Action === 'Retired' ? 'Retired' : (isOut ? 'Out' : 'Available');
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${device.DeviceID}</strong></td>
+                    <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+                    <td>${isOut ? device.Associate : '-'}</td>
+                    <td>${isOut ? `<span class="dept-badge dept-${device.Department.toLowerCase()}">${device.Department}</span>` : '-'}</td>
+                    <td><span class="status-badge status-${device.Condition.toLowerCase().replace(' ', '-')}">${device.Condition}</span></td>
+                    <td>${formatDateTime(new Date(device.Timestamp))}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateActivityLogTable() {
+            const tbody = document.querySelector('#activityLogTable tbody');
+            tbody.innerHTML = '';
+
+            // Sort by timestamp descending (newest first)
+            const sortedData = [...scannerData].sort((a, b) => 
+                new Date(b.Timestamp) - new Date(a.Timestamp)
+            );
+
+            sortedData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatDateTime(new Date(row.Timestamp))}</td>
+                    <td><strong>${row.Action}</strong></td>
+                    <td>${row.ProcessedBy || '-'}</td>
+                    <td>${row.DeviceID}</td>
+                    <td>${row.Associate || '-'}</td>
+                    <td>${row.Department ? `<span class="dept-badge dept-${row.Department.toLowerCase()}">${row.Department}</span>` : '-'}</td>
+                    <td><span class="status-badge status-${row.Condition.toLowerCase().replace(' ', '-')}">${row.Condition}</span></td>
+                    <td>${row.Returned ? formatDateTime(new Date(row.Returned)) : '-'}</td>
+                    <td>${row.Notes || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateRetiredTable() {
+            const tbody = document.querySelector('#retiredTable tbody');
+            tbody.innerHTML = '';
+
+            const retiredDevices = scannerData.filter(row => row.Action === 'Retired');
+
+            if (retiredDevices.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No retired devices</td></tr>';
+                return;
+            }
+
+            retiredDevices.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${row.DeviceID}</strong></td>
+                    <td>${formatDateTime(new Date(row.Timestamp))}</td>
+                    <td>${row.Associate || '-'}</td>
+                    <td>${row.Department ? `<span class="dept-badge dept-${row.Department.toLowerCase()}">${row.Department}</span>` : '-'}</td>
+                    <td>${row.Notes || 'Device retired'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addNewDevice() {
+            const deviceId = document.getElementById('newDeviceId').value.trim();
+            const condition = document.getElementById('newDeviceCondition').value;
+            const serial = document.getElementById('newDeviceSerial').value.trim();
+            const model = document.getElementById('newDeviceModel').value.trim();
+            const notes = document.getElementById('newDeviceNotes').value.trim();
+
+            if (!deviceId || !condition) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            // Check if device already exists
+            const existingDevice = scannerData.find(d => d.DeviceID === deviceId);
+            if (existingDevice) {
+                showError(`Device ${deviceId} already exists in the system`);
+                return;
+            }
+
+            let deviceNotes = notes;
+            if (serial) deviceNotes = `Serial: ${serial}. ${deviceNotes}`;
+            if (model) deviceNotes = `Model: ${model}. ${deviceNotes}`;
+
+            const newRow = {
+                Timestamp: new Date().toISOString(),
+                Action: 'Added',
+                DeviceID: deviceId,
+                Associate: '',
+                Department: '',
+                Condition: condition,
+                Returned: new Date().toISOString(),
+                Notes: deviceNotes || 'New device added to inventory'
+            };
+
+            // Add to data
+            scannerData.unshift(newRow);
+            processData();
+            
+            showSuccess(`Scanner ${deviceId} added to inventory successfully`);
+            clearAddDeviceForm();
+        }
+
+        function clearAddDeviceForm() {
+            document.getElementById('newDeviceId').value = '';
+            document.getElementById('newDeviceCondition').value = '';
+            document.getElementById('newDeviceSerial').value = '';
+            document.getElementById('newDeviceModel').value = '';
+            document.getElementById('newDeviceNotes').value = '';
+        }
+
+        function checkOutScanner() {
+            if (!currentUser) {
+                showError('Please login first');
+                return;
+            }
+
+            const deviceId = document.getElementById('deviceIdOut').value.trim();
+            const associate = document.getElementById('associateOut').value.trim();
+            const department = document.getElementById('departmentOut').value;
+            const condition = document.getElementById('conditionOut').value;
+            const notes = document.getElementById('notesOut').value.trim();
+
+            if (!deviceId || !associate || !department || !condition) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            // Check if device is already out
+            const alreadyOut = currentlyOutData.find(d => d.DeviceID === deviceId);
+            if (alreadyOut) {
+                showError(`Device ${deviceId} is already checked out to ${alreadyOut.Associate}`);
+                return;
+            }
+
+            const newRow = {
+                Timestamp: new Date().toISOString(),
+                Action: 'Out',
+                ProcessedBy: currentUser,
+                DeviceID: deviceId,
+                Associate: associate,
+                Department: department,
+                Condition: condition,
+                Returned: '',
+                Notes: notes
+            };
+
+            // Write to Google Sheets
+            writeToGoogleSheets(newRow);
+
+            // Add to local data for immediate display
+            scannerData.unshift(newRow);
+            processData();
+            
+            showSuccess(`Scanner ${deviceId} checked out to ${associate}`);
+            clearCheckOutForm();
+
+            // Reload data from sheets after a short delay
+            setTimeout(() => {
+                if (SHEET_ID) loadDataFromGoogleSheets();
+            }, 2000);
+        }
+
+        function checkInScanner() {
+            if (!currentUser) {
+                showError('Please login first');
+                return;
+            }
+
+            const deviceId = document.getElementById('deviceIdIn').value.trim();
+            const condition = document.getElementById('conditionIn').value;
+            const notes = document.getElementById('notesIn').value.trim();
+
+            if (!deviceId || !condition) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            // Find the checkout record
+            const checkoutRecord = currentlyOutData.find(d => d.DeviceID === deviceId);
+            if (!checkoutRecord) {
+                showError(`Device ${deviceId} is not currently checked out`);
+                return;
+            }
+
+            const updateData = {
+                DeviceID: deviceId,
+                ProcessedBy: currentUser,
+                Condition: condition,
+                Returned: new Date().toISOString(),
+                Notes: notes
+            };
+
+            // Write to Google Sheets
+            writeToGoogleSheets(updateData);
+
+            // Update local data for immediate display
+            const index = scannerData.findIndex(r => 
+                r.DeviceID === deviceId && r.Action === 'Out' && !r.Returned
+            );
+            if (index !== -1) {
+                scannerData[index].Returned = updateData.Returned;
+                scannerData[index].Condition = condition;
+                scannerData[index].ProcessedBy = currentUser;
+                if (notes) scannerData[index].Notes = notes;
+            }
+
+            processData();
+            showSuccess(`Scanner ${deviceId} checked in successfully`);
+            clearCheckInForm();
+
+            // Reload data from sheets after a short delay
+            setTimeout(() => {
+                if (SHEET_ID) loadDataFromGoogleSheets();
+            }, 2000);
+        }
+
+        function retireScanner() {
+            if (!currentUser) {
+                showError('Please login first');
+                return;
+            }
+
+            const deviceId = document.getElementById('deviceIdIn').value.trim();
+            const notes = document.getElementById('notesIn').value.trim();
+
+            if (!deviceId) {
+                showError('Please enter a device ID');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to retire device ${deviceId}? This action marks the scanner as permanently out of service.`)) {
+                return;
+            }
+
+            const newRow = {
+                Timestamp: new Date().toISOString(),
+                Action: 'Retired',
+                ProcessedBy: currentUser,
+                DeviceID: deviceId,
+                Associate: '',
+                Department: '',
+                Condition: 'Retired',
+                Returned: new Date().toISOString(),
+                Notes: notes || 'Device retired due to poor working quality'
+            };
+
+            scannerData.unshift(newRow);
+            processData();
+            
+            showSuccess(`Scanner ${deviceId} has been retired`);
+            clearCheckInForm();
+        }
+
+        function quickCheckIn(deviceId) {
+            document.getElementById('deviceIdIn').value = deviceId;
+            showTab('checkout');
+            document.getElementById('deviceIdIn').focus();
+        }
+
+        function clearCheckOutForm() {
+            document.getElementById('deviceIdOut').value = '';
+            document.getElementById('associateOut').value = '';
+            document.getElementById('departmentOut').value = '';
+            document.getElementById('conditionOut').value = '';
+            document.getElementById('notesOut').value = '';
+        }
+
+        function clearCheckInForm() {
+            document.getElementById('deviceIdIn').value = '';
+            document.getElementById('conditionIn').value = '';
+            document.getElementById('notesIn').value = '';
+        }
+
+        function calculateDuration(startTime) {
+            const now = new Date();
+            const diff = now - startTime;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+
+        function formatDateTime(date) {
+            if (!date || isNaN(date.getTime())) return 'N/A';
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function showSuccess(message) {
+            const alert = document.getElementById('successAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('errorAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize - Load data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check for existing login
+            // Login check is now handled by checkExistingLogin() called in the login section
+        });
+
+        // Refresh data every 30 seconds
+        setInterval(() => {
+            if (SHEET_ID && currentUser) {
+                loadDataFromGoogleSheets();
+            }
+        }, 30000);
+
+        function loadSampleData() {
+            // Sample data for testing
+            scannerData = [
+                {
+                    Timestamp: new Date(Date.now() - 3600000).toISOString(),
+                    Action: 'Out',
+                    ProcessedBy: 'John Supervisor',
+                    DeviceID: 'SCAN001',
+                    Associate: 'Mary Worker',
+                    Department: 'Ecom',
+                    Condition: 'Working',
+                    Returned: '',
+                    Notes: ''
+                },
+                {
+                    Timestamp: new Date(Date.now() - 7200000).toISOString(),
+                    Action: 'Out',
+                    ProcessedBy: 'Sarah Manager',
+                    DeviceID: 'SCAN002',
+                    Associate: 'Bob Associate',
+                    Department: 'B2B',
+                    Condition: 'Fair',
+                    Returned: '',
+                    Notes: 'Battery low'
+                }
+            ];
+            processData();
+        }
+    </script>
+</body>
+</html>
