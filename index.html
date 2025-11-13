@@ -929,43 +929,6 @@
             }
         }
 
-        function processData(jsonData) {
-            ordersData = jsonData.map(order => ({
-                orderId: order['Order ID'],
-                client: order['Client Name'],
-                orderDate: parseDate(order['Order Date']),
-                fulfillableDate: parseDate(order['Fulfillable Date'] || order['Fulfillable Date ']),
-                shipByDate: parseDate(order['Ship By Date']),
-                status: order['Order Status'],
-                processCode: order['Process Code'] || 'N/A',
-                facility: order['Facility'] || 'N/A',
-                pullId: order['Pull ID'] || 'N/A'
-            })).filter(order => order.orderId); // Filter out empty rows
-
-            updateDashboard();
-        }
-
-        function parseDate(dateStr) {
-            if (!dateStr) return null;
-            
-            // Handle Excel serial dates
-            if (typeof dateStr === 'number') {
-                return new Date((dateStr - 25569) * 86400 * 1000);
-            }
-            
-            // Handle string dates
-            try {
-                const parsed = new Date(dateStr);
-                if (!isNaN(parsed.getTime())) {
-                    return parsed;
-                }
-            } catch (e) {
-                console.error('Error parsing date:', dateStr, e);
-            }
-            
-            return null;
-        }
-
         function processData() {
             // Calculate currently out scanners
             currentlyOutData = scannerData.filter(row => 
