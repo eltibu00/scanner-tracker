@@ -882,50 +882,52 @@
             event.target.classList.add('active');
         }
 
-        // Load data from Google Sheets
+        // Load data from Google Sheets via Apps Script (avoids CORS)
         async function loadDataFromGoogleSheets() {
-            if (!SHEET_ID) {
-                showError('Please configure Google Sheets ID in the code');
+            if (!APPS_SCRIPT_URL) {
+                showError('Please configure Apps Script URL in the code');
                 return;
             }
 
             try {
-                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+                // Add a query parameter to trigger a GET request that returns data
+                const url = `${APPS_SCRIPT_URL}?action=getData`;
                 const response = await fetch(url);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
                 }
                 
-                const csvText = await response.text();
+                const data = await response.json();
                 
-                Papa.parse(csvText, {
-                    header: true,
-                    dynamicTyping: false,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        scannerData = results.data.map(row => ({
-                            Timestamp: row.Timestamp || '',
-                            Action: row.Action || '',
-                            ProcessedBy: row.ProcessedBy || '',
-                            DeviceID: row.DeviceID || '',
-                            Associate: row.Associate || '',
-                            Department: row.Department || '',
-                            Condition: row.Condition || '',
-                            Returned: row.Returned || '',
-                            Notes: row.Notes || ''
-                        })).filter(row => row.DeviceID); // Filter out empty rows
-                        
-                        processData();
-                    },
-                    error: (error) => {
-                        console.error('Error parsing CSV:', error);
-                        showError('Error loading data from Google Sheets');
+                if (data.success && data.data) {
+                    scannerData = data.data.map(row => ({
+                        Timestamp: row[0] || '',
+                        Action: row[1] || '',
+                        ProcessedBy: row[2] || '',
+                        DeviceID: row[3] || '',
+                        Associate: row[4] || '',
+                        Department: row[5] || '',
+                        Condition: row[6] || '',
+                        Returned: row[7] || '',
+                        Notes: row[8] || ''
+                    })).filter(row => row.DeviceID); // Filter out empty rows
+                    
+                    processData();
+                } else {
+                    console.error('No data returned from Apps Script');
+                    // Load sample data if no real data
+                    if (scannerData.length === 0) {
+                        loadSampleData();
                     }
-                });
+                }
             } catch (error) {
                 console.error('Error loading data:', error);
                 showError('Unable to load data from Google Sheets');
+                // Load sample data if error
+                if (scannerData.length === 0) {
+                    loadSampleData();
+                }
             }
         }
 
