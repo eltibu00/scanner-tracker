@@ -745,9 +745,17 @@
         const SHEET_NAME = 'ScannerLog'; // Sheet tab name
         let APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4XOXmCy2AlYH1Xquz4DvvnK5y2sqZ43qVFmAH8VXYDE3aA0Iqh-QZzqJfEENUge6AqQ/exec'; // Your Web App URL
 
+        // Timezone Configuration - Eastern Time (New Jersey)
+        const TIMEZONE = 'America/New_York';
+
         let scannerData = [];
         let currentlyOutData = [];
         let currentUser = null;
+
+        // Function to get current timestamp in Eastern Time
+        function getCurrentTimestamp() {
+            return new Date().toLocaleString('en-US', { timeZone: TIMEZONE });
+        }
 
         // Function to write data to Google Sheets
         async function writeToGoogleSheets(data) {
@@ -1107,7 +1115,7 @@
             }
 
             const newRow = {
-                Timestamp: new Date().toISOString(),
+                Timestamp: getCurrentTimestamp(),
                 Action: 'Out',
                 ProcessedBy: currentUser,
                 DeviceID: deviceId,
@@ -1157,10 +1165,11 @@
             }
 
             const updateData = {
+                Action: 'CheckIn',
                 DeviceID: deviceId,
                 ProcessedBy: currentUser,
                 Condition: condition,
-                Returned: new Date().toISOString(),
+                Returned: getCurrentTimestamp(),
                 Notes: notes
             };
 
