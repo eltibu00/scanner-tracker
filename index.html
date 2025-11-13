@@ -945,16 +945,25 @@
         }
 
         function updateMetrics() {
-            const uniqueDevices = [...new Set(scannerData.map(r => r.DeviceID))];
-            const retiredDevices = scannerData.filter(r => r.Action === 'Retired');
-            const activeDevices = uniqueDevices.length - retiredDevices.length;
-            const needsRepair = scannerData.filter(r => 
-                r.Condition === 'Needs Repair' && r.Action !== 'Retired'
+            // Get unique devices
+            const deviceMap = {};
+            scannerData.forEach(row => {
+                if (!deviceMap[row.DeviceID] || new Date(row.Timestamp) > new Date(deviceMap[row.DeviceID].Timestamp)) {
+                    deviceMap[row.DeviceID] = row;
+                }
+            });
+            
+            const allDevices = Object.values(deviceMap);
+            const retiredDevices = allDevices.filter(d => d.Action === 'Retired');
+            const activeDevices = allDevices.filter(d => d.Action !== 'Retired');
+            
+            const needsRepair = activeDevices.filter(d => 
+                d.Condition === 'Needs Repair' && (!d.Returned || d.Returned === '') && d.Action === 'Out'
             );
 
-            document.getElementById('totalActive').textContent = activeDevices;
+            document.getElementById('totalActive').textContent = activeDevices.length;
             document.getElementById('currentlyOut').textContent = currentlyOutData.length;
-            document.getElementById('available').textContent = Math.max(0, activeDevices - currentlyOutData.length);
+            document.getElementById('available').textContent = Math.max(0, activeDevices.length - currentlyOutData.length);
             document.getElementById('needsRepair').textContent = needsRepair.length;
             document.getElementById('retired').textContent = retiredDevices.length;
         }
@@ -992,6 +1001,8 @@
 
             // Get unique devices with their latest status
             const deviceMap = {};
+            
+            // Process all records, keeping the most recent one for each device
             scannerData.forEach(row => {
                 if (!deviceMap[row.DeviceID] || new Date(row.Timestamp) > new Date(deviceMap[row.DeviceID].Timestamp)) {
                     deviceMap[row.DeviceID] = row;
@@ -1000,9 +1011,17 @@
 
             const devices = Object.values(deviceMap);
 
-            devices.forEach(device => {
+            // Filter out retired devices from inventory (they go to Retired tab)
+            const activeDevices = devices.filter(device => device.Action !== 'Retired');
+
+            if (activeDevices.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No active devices in inventory</td></tr>';
+                return;
+            }
+
+            activeDevices.forEach(device => {
                 const isOut = device.Action === 'Out' && (!device.Returned || device.Returned === '');
-                const status = device.Action === 'Retired' ? 'Retired' : (isOut ? 'Out' : 'Available');
+                const status = isOut ? 'Out' : 'Available';
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -1243,22 +1262,31 @@
             }
 
             const newRow = {
-                Timestamp: new Date().toISOString(),
+                Timestamp: getCurrentTimestamp(),
                 Action: 'Retired',
                 ProcessedBy: currentUser,
                 DeviceID: deviceId,
                 Associate: '',
                 Department: '',
                 Condition: 'Retired',
-                Returned: new Date().toISOString(),
+                Returned: getCurrentTimestamp(),
                 Notes: notes || 'Device retired due to poor working quality'
             };
 
+            // Write to Google Sheets
+            writeToGoogleSheets(newRow);
+
+            // Add to local data
             scannerData.unshift(newRow);
             processData();
             
             showSuccess(`Scanner ${deviceId} has been retired`);
             clearCheckInForm();
+
+            // Reload data from sheets after a short delay
+            setTimeout(() => {
+                if (SHEET_ID) loadDataFromGoogleSheets();
+            }, 2000);
         }
 
         function quickCheckIn(deviceId) {
