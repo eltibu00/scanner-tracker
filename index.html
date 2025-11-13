@@ -1087,7 +1087,12 @@
         }
 
         function addNewDevice() {
-            const deviceId = document.getElementById('newDeviceId').value.trim();
+            if (!currentUser) {
+                showError('Please login first');
+                return;
+            }
+
+            const deviceId = document.getElementById('newDeviceId').value.trim().toUpperCase();
             const condition = document.getElementById('newDeviceCondition').value;
             const serial = document.getElementById('newDeviceSerial').value.trim();
             const model = document.getElementById('newDeviceModel').value.trim();
@@ -1098,8 +1103,8 @@
                 return;
             }
 
-            // Check if device already exists
-            const existingDevice = scannerData.find(d => d.DeviceID === deviceId);
+            // Check if device already exists (case-insensitive)
+            const existingDevice = scannerData.find(d => d.DeviceID.toUpperCase() === deviceId);
             if (existingDevice) {
                 showError(`Device ${deviceId} already exists in the system`);
                 return;
@@ -1110,22 +1115,31 @@
             if (model) deviceNotes = `Model: ${model}. ${deviceNotes}`;
 
             const newRow = {
-                Timestamp: new Date().toISOString(),
+                Timestamp: getCurrentTimestamp(),
                 Action: 'Added',
+                ProcessedBy: currentUser,
                 DeviceID: deviceId,
                 Associate: '',
                 Department: '',
                 Condition: condition,
-                Returned: new Date().toISOString(),
+                Returned: getCurrentTimestamp(),
                 Notes: deviceNotes || 'New device added to inventory'
             };
 
-            // Add to data
+            // Write to Google Sheets
+            writeToGoogleSheets(newRow);
+
+            // Add to local data
             scannerData.unshift(newRow);
             processData();
             
             showSuccess(`Scanner ${deviceId} added to inventory successfully`);
             clearAddDeviceForm();
+
+            // Reload data from sheets after a short delay
+            setTimeout(() => {
+                if (SHEET_ID) loadDataFromGoogleSheets();
+            }, 2000);
         }
 
         function clearAddDeviceForm() {
@@ -1142,7 +1156,7 @@
                 return;
             }
 
-            const deviceId = document.getElementById('deviceIdOut').value.trim();
+            const deviceId = document.getElementById('deviceIdOut').value.trim().toUpperCase();
             const associate = document.getElementById('associateOut').value.trim();
             const department = document.getElementById('departmentOut').value;
             const condition = document.getElementById('conditionOut').value;
@@ -1153,8 +1167,8 @@
                 return;
             }
 
-            // Check if device is already out
-            const alreadyOut = currentlyOutData.find(d => d.DeviceID === deviceId);
+            // Check if device is already out (case-insensitive)
+            const alreadyOut = currentlyOutData.find(d => d.DeviceID.toUpperCase() === deviceId);
             if (alreadyOut) {
                 showError(`Device ${deviceId} is already checked out to ${alreadyOut.Associate}`);
                 return;
@@ -1194,7 +1208,7 @@
                 return;
             }
 
-            const deviceId = document.getElementById('deviceIdIn').value.trim();
+            const deviceId = document.getElementById('deviceIdIn').value.trim().toUpperCase();
             const condition = document.getElementById('conditionIn').value;
             const notes = document.getElementById('notesIn').value.trim();
 
@@ -1203,8 +1217,8 @@
                 return;
             }
 
-            // Find the checkout record
-            const checkoutRecord = currentlyOutData.find(d => d.DeviceID === deviceId);
+            // Find the checkout record (case-insensitive)
+            const checkoutRecord = currentlyOutData.find(d => d.DeviceID.toUpperCase() === deviceId);
             if (!checkoutRecord) {
                 showError(`Device ${deviceId} is not currently checked out`);
                 return;
@@ -1212,7 +1226,7 @@
 
             const updateData = {
                 Action: 'CheckIn',
-                DeviceID: deviceId,
+                DeviceID: checkoutRecord.DeviceID, // Use the original casing from checkout
                 ProcessedBy: currentUser,
                 Condition: condition,
                 Returned: getCurrentTimestamp(),
@@ -1224,7 +1238,7 @@
 
             // Update local data for immediate display
             const index = scannerData.findIndex(r => 
-                r.DeviceID === deviceId && r.Action === 'Out' && !r.Returned
+                r.DeviceID.toUpperCase() === deviceId && r.Action === 'Out' && !r.Returned
             );
             if (index !== -1) {
                 scannerData[index].Returned = updateData.Returned;
@@ -1249,7 +1263,7 @@
                 return;
             }
 
-            const deviceId = document.getElementById('deviceIdIn').value.trim();
+            const deviceId = document.getElementById('deviceIdIn').value.trim().toUpperCase();
             const notes = document.getElementById('notesIn').value.trim();
 
             if (!deviceId) {
