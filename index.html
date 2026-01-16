@@ -287,7 +287,7 @@
             color: #742a2a;
         }
 
-        .status-repair {
+        .status-needs-repair {
             background: #feebc8;
             color: #7c2d12;
         }
@@ -451,6 +451,17 @@
             gap: 1rem;
             margin-top: 1rem;
         }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header .section-title {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -528,11 +539,11 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="deviceIdOut">Device ID *</label>
-                        <input type="text" id="deviceIdOut" placeholder="Scan or enter device ID" required>
+                        <input type="text" id="deviceIdOut" placeholder="Enter number (e.g., 01, 23, 42)" required maxlength="10">
                     </div>
                     <div class="form-group">
                         <label for="associateOut">Checked Out To *</label>
-                        <input type="text" id="associateOut" placeholder="Scan or enter associate name" required>
+                        <input type="text" id="associateOut" placeholder="Enter associate name (auto-uppercase)" required>
                     </div>
                     <div class="form-group">
                         <label for="departmentOut">Department *</label>
@@ -569,7 +580,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="deviceIdIn">Device ID *</label>
-                        <input type="text" id="deviceIdIn" placeholder="Scan or enter device ID to check in" required>
+                        <input type="text" id="deviceIdIn" placeholder="Enter number (e.g., 01, 23, 42)" required maxlength="10">
                     </div>
                     <div class="form-group">
                         <label for="conditionIn">Return Condition *</label>
@@ -648,7 +659,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="newDeviceId">Device ID *</label>
-                        <input type="text" id="newDeviceId" placeholder="Enter unique device ID (e.g., SCAN001)" required>
+                        <input type="text" id="newDeviceId" placeholder="Enter number (e.g., 01, 23, 42)" required maxlength="10">
                     </div>
                     <div class="form-group">
                         <label for="newDeviceCondition">Initial Condition *</label>
@@ -662,11 +673,11 @@
                     </div>
                     <div class="form-group">
                         <label for="newDeviceSerial">Serial Number (Optional)</label>
-                        <input type="text" id="newDeviceSerial" placeholder="Enter serial number">
+                        <input type="text" id="newDeviceSerial" placeholder="Enter serial number (auto-uppercase)">
                     </div>
                     <div class="form-group">
                         <label for="newDeviceModel">Model (Optional)</label>
-                        <input type="text" id="newDeviceModel" placeholder="Enter scanner model">
+                        <input type="text" id="newDeviceModel" placeholder="Enter scanner model (auto-uppercase)">
                     </div>
                 </div>
                 <div class="form-group">
@@ -682,7 +693,8 @@
             <div class="form-section" style="margin-top: 2rem;">
                 <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: #2d3748;">💡 Tips for Managing Devices</h3>
                 <ul style="list-style: disc; margin-left: 1.5rem; color: #4a5568; line-height: 1.8;">
-                    <li>Use consistent Device ID format (e.g., SCAN001, SCAN002, etc.)</li>
+                    <li>Device IDs auto-format to NJ3RF## (just enter the number: 1, 23, 42)</li>
+                    <li>All text automatically converts to uppercase</li>
                     <li>Record serial numbers for warranty and support purposes</li>
                     <li>New devices automatically show as "Available" in inventory</li>
                     <li>You can check out the device immediately after adding it</li>
@@ -715,7 +727,10 @@
         <!-- Tab 6: Activity Log -->
         <div id="tab-activity-log" class="tab-content">
             <div class="form-section">
-                <h2 class="section-title">📜 Activity Log</h2>
+                <div class="section-header">
+                    <h2 class="section-title">📜 Activity Log</h2>
+                    <button class="btn btn-primary" onclick="exportToExcel()">📊 Export to Excel</button>
+                </div>
                 <div style="overflow-x: auto;">
                     <table id="activityLogTable">
                         <thead>
@@ -751,6 +766,42 @@
         let scannerData = [];
         let currentlyOutData = [];
         let currentUser = null;
+
+        // Auto-format Device ID to NJ3RF## format
+        function formatDeviceId(input) {
+            // Remove all non-alphanumeric characters
+            let cleaned = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // If it starts with NJ3RF, extract just the number part
+            if (cleaned.startsWith('NJ3RF')) {
+                let numberPart = cleaned.substring(5); // Get everything after 'NJ3RF'
+                
+                // Remove any non-numeric characters from the number part
+                numberPart = numberPart.replace(/[^0-9]/g, '');
+                
+                // Pad with leading zero if needed (01, 02, etc.)
+                if (numberPart.length === 1) {
+                    numberPart = '0' + numberPart;
+                }
+                
+                return 'NJ3RF' + numberPart;
+            }
+            
+            // If user just typed a number, auto-add NJ3RF prefix
+            if (/^\d+$/.test(cleaned)) {
+                let num = cleaned.padStart(2, '0'); // Pad to 2 digits
+                return 'NJ3RF' + num;
+            }
+            
+            // Otherwise return what they typed (will be validated)
+            return cleaned;
+        }
+
+        // Validate Device ID format
+        function validateDeviceId(deviceId) {
+            const pattern = /^NJ3RF\d{2,}$/; // NJ3RF followed by at least 2 digits
+            return pattern.test(deviceId);
+        }
 
         // Function to get current timestamp in Eastern Time
         function getCurrentTimestamp() {
@@ -856,17 +907,6 @@
             }
         }
 
-        // Enter key to login
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('loginName').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    login();
-                }
-            });
-            
-            checkExistingLogin();
-        });
-
         // Tab switching
         function showTab(tabName) {
             // Hide all tabs
@@ -936,13 +976,18 @@
             const deviceMap = new Map();
             
             scannerData.forEach(row => {
-                const deviceId = row.DeviceID;
+                const deviceId = row.DeviceID.toUpperCase().trim(); // Normalize to uppercase and trim
                 const timestamp = new Date(row.Timestamp);
                 
-                // For devices with Action='Out', check if they have a Returned timestamp
-                // If they do, they're actually available (checked in)
-                if (!deviceMap.has(deviceId) || timestamp > new Date(deviceMap.get(deviceId).Timestamp)) {
+                // Only keep the most recent record for each device
+                if (!deviceMap.has(deviceId)) {
                     deviceMap.set(deviceId, row);
+                } else {
+                    const existing = deviceMap.get(deviceId);
+                    const existingTime = new Date(existing.Timestamp);
+                    if (timestamp > existingTime) {
+                        deviceMap.set(deviceId, row);
+                    }
                 }
             });
             
@@ -958,66 +1003,82 @@
             updateActivityLogTable();
         }
 
-       function updateMetrics() {
-    // Build a map of the LATEST status for each device
-    const deviceMap = new Map();
-    
-    scannerData.forEach(row => {
-        const deviceId = row.DeviceID;
-        const timestamp = new Date(row.Timestamp);
-        
-        if (!deviceMap.has(deviceId) || timestamp > new Date(deviceMap.get(deviceId).Timestamp)) {
-            deviceMap.set(deviceId, row);
-        }
-    });
-    
-    const allDevices = Array.from(deviceMap.values());
-    
-    // DEBUG: Log all unique devices
-    console.log('=== DEBUG: Total Unique Devices ===');
-    console.log('Total unique devices found:', allDevices.length);
-    
-    // Retired devices
-    const retiredDevices = allDevices.filter(d => d.Action === 'Retired');
-    console.log('Retired devices:', retiredDevices.length);
-    
-    // Active devices (not retired)
-    const activeDevices = allDevices.filter(d => d.Action !== 'Retired');
-    console.log('Active devices:', activeDevices.length);
-    
-    // Currently Out = devices with Action='Out' AND no Returned timestamp
-    const currentlyOut = activeDevices.filter(d => 
-        d.Action === 'Out' && (!d.Returned || d.Returned === '')
-    );
-    console.log('Currently Out:', currentlyOut.length);
-    console.log('Currently Out devices:', currentlyOut.map(d => d.DeviceID));
-    
-    // Available = active devices that are either:
-    // 1. Action='Added' (newly added, never checked out)
-    // 2. Action='Out' but HAS a Returned timestamp (checked in)
-    const available = activeDevices.filter(d => 
-        d.Action === 'Added' || 
-        (d.Action === 'Out' && d.Returned && d.Returned !== '')
-    );
-    console.log('Available:', available.length);
-    console.log('Available devices:', available.map(d => `${d.DeviceID} (${d.Action}, Returned: ${d.Returned ? 'Yes' : 'No'})`));
-    
-    // Needs Repair = currently out devices with "Needs Repair" condition
-    const needsRepair = currentlyOut.filter(d => 
-        d.Condition === 'Needs Repair'
-    );
-    console.log('Needs Repair:', needsRepair.length);
-    
-    console.log('=== Verification ===');
-    console.log('Available + Currently Out =', available.length + currentlyOut.length);
-    console.log('Should equal Active Devices =', activeDevices.length);
+        function updateMetrics() {
+            // Build a map of the LATEST status for each device (case-insensitive)
+            const deviceMap = new Map();
+            
+            scannerData.forEach(row => {
+                const deviceId = row.DeviceID.toUpperCase().trim(); // Normalize to uppercase and trim
+                const timestamp = new Date(row.Timestamp);
+                
+                // Only keep the most recent record for each device
+                if (!deviceMap.has(deviceId)) {
+                    deviceMap.set(deviceId, row);
+                } else {
+                    const existing = deviceMap.get(deviceId);
+                    const existingTime = new Date(existing.Timestamp);
+                    if (timestamp > existingTime) {
+                        deviceMap.set(deviceId, row);
+                    }
+                }
+            });
+            
+            const allDevices = Array.from(deviceMap.values());
+            
+            // DEBUG: Log all unique devices
+            console.log('=== DEBUG: Scanner Metrics ===');
+            console.log('Total unique devices found:', allDevices.length);
+            console.log('Unique Device IDs:', Array.from(deviceMap.keys()).sort());
+            
+            // Retired devices
+            const retiredDevices = allDevices.filter(d => d.Action === 'Retired');
+            console.log('Retired devices:', retiredDevices.length);
+            if (retiredDevices.length > 0) {
+                console.log('Retired:', retiredDevices.map(d => d.DeviceID));
+            }
+            
+            // Active devices (not retired)
+            const activeDevices = allDevices.filter(d => d.Action !== 'Retired');
+            console.log('Active devices:', activeDevices.length);
+            
+            // Currently Out = devices with Action='Out' AND no Returned timestamp
+            const currentlyOut = activeDevices.filter(d => 
+                d.Action === 'Out' && (!d.Returned || d.Returned === '')
+            );
+            console.log('Currently Out:', currentlyOut.length);
+            if (currentlyOut.length > 0) {
+                console.log('Out:', currentlyOut.map(d => d.DeviceID));
+            }
+            
+            // Available = active devices that are either:
+            // 1. Action='Added' (newly added, never checked out)
+            // 2. Action='Out' but HAS a Returned timestamp (checked in)
+            const available = activeDevices.filter(d => 
+                d.Action === 'Added' || 
+                (d.Action === 'Out' && d.Returned && d.Returned !== '')
+            );
+            console.log('Available:', available.length);
+            console.log('Available breakdown:');
+            console.log('  - Added (never checked out):', activeDevices.filter(d => d.Action === 'Added').length);
+            console.log('  - Checked out then returned:', activeDevices.filter(d => d.Action === 'Out' && d.Returned && d.Returned !== '').length);
+            
+            // Needs Repair = currently out devices with "Needs Repair" condition
+            const needsRepair = currentlyOut.filter(d => 
+                d.Condition === 'Needs Repair'
+            );
+            console.log('Needs Repair:', needsRepair.length);
+            
+            console.log('=== Verification ===');
+            console.log('Available + Currently Out =', available.length + currentlyOut.length);
+            console.log('Should equal Active Devices =', activeDevices.length);
+            console.log('Match:', (available.length + currentlyOut.length) === activeDevices.length ? '✅' : '❌');
 
-    document.getElementById('totalActive').textContent = activeDevices.length;
-    document.getElementById('currentlyOut').textContent = currentlyOut.length;
-    document.getElementById('available').textContent = available.length;
-    document.getElementById('needsRepair').textContent = needsRepair.length;
-    document.getElementById('retired').textContent = retiredDevices.length;
-}
+            document.getElementById('totalActive').textContent = activeDevices.length;
+            document.getElementById('currentlyOut').textContent = currentlyOut.length;
+            document.getElementById('available').textContent = available.length;
+            document.getElementById('needsRepair').textContent = needsRepair.length;
+            document.getElementById('retired').textContent = retiredDevices.length;
+        }
 
         function updateCurrentlyOutTable() {
             const tbody = document.querySelector('#currentlyOutTable tbody');
@@ -1055,11 +1116,17 @@
             
             // Process all records, keeping the most recent one for each device
             scannerData.forEach(row => {
-                const deviceId = row.DeviceID;
+                const deviceId = row.DeviceID.toUpperCase().trim();
                 const timestamp = new Date(row.Timestamp);
                 
-                if (!deviceMap.has(deviceId) || timestamp > new Date(deviceMap.get(deviceId).Timestamp)) {
+                if (!deviceMap.has(deviceId)) {
                     deviceMap.set(deviceId, row);
+                } else {
+                    const existing = deviceMap.get(deviceId);
+                    const existingTime = new Date(existing.Timestamp);
+                    if (timestamp > existingTime) {
+                        deviceMap.set(deviceId, row);
+                    }
                 }
             });
 
@@ -1146,7 +1213,7 @@
                 return;
             }
 
-            const deviceId = document.getElementById('newDeviceId').value.trim().toUpperCase();
+            let deviceId = document.getElementById('newDeviceId').value.trim();
             const condition = document.getElementById('newDeviceCondition').value;
             const serial = document.getElementById('newDeviceSerial').value.trim();
             const model = document.getElementById('newDeviceModel').value.trim();
@@ -1154,6 +1221,17 @@
 
             if (!deviceId || !condition) {
                 showError('Please fill in all required fields');
+                return;
+            }
+
+            // Auto-format the device ID
+            deviceId = formatDeviceId(deviceId);
+            
+            // Validate format
+            if (!validateDeviceId(deviceId)) {
+                showError('Invalid Device ID format. Must be NJ3RF## (e.g., NJ3RF01, NJ3RF02)');
+                document.getElementById('newDeviceId').value = deviceId;
+                document.getElementById('newDeviceId').focus();
                 return;
             }
 
@@ -1210,7 +1288,7 @@
                 return;
             }
 
-            const deviceId = document.getElementById('deviceIdOut').value.trim().toUpperCase();
+            let deviceId = document.getElementById('deviceIdOut').value.trim();
             const associate = document.getElementById('associateOut').value.trim();
             const department = document.getElementById('departmentOut').value;
             const condition = document.getElementById('conditionOut').value;
@@ -1218,6 +1296,17 @@
 
             if (!deviceId || !associate || !department || !condition) {
                 showError('Please fill in all required fields');
+                return;
+            }
+
+            // Auto-format the device ID
+            deviceId = formatDeviceId(deviceId);
+            
+            // Validate format
+            if (!validateDeviceId(deviceId)) {
+                showError('Invalid Device ID format. Must be NJ3RF## (e.g., NJ3RF01, NJ3RF02)');
+                document.getElementById('deviceIdOut').value = deviceId; // Show what was formatted
+                document.getElementById('deviceIdOut').focus();
                 return;
             }
 
@@ -1262,12 +1351,23 @@
                 return;
             }
 
-            const deviceId = document.getElementById('deviceIdIn').value.trim().toUpperCase();
+            let deviceId = document.getElementById('deviceIdIn').value.trim();
             const condition = document.getElementById('conditionIn').value;
             const notes = document.getElementById('notesIn').value.trim();
 
             if (!deviceId || !condition) {
                 showError('Please fill in all required fields');
+                return;
+            }
+
+            // Auto-format the device ID
+            deviceId = formatDeviceId(deviceId);
+            
+            // Validate format
+            if (!validateDeviceId(deviceId)) {
+                showError('Invalid Device ID format. Must be NJ3RF## (e.g., NJ3RF01, NJ3RF02)');
+                document.getElementById('deviceIdIn').value = deviceId;
+                document.getElementById('deviceIdIn').focus();
                 return;
             }
 
@@ -1317,13 +1417,16 @@
                 return;
             }
 
-            const deviceId = document.getElementById('deviceIdIn').value.trim().toUpperCase();
+            let deviceId = document.getElementById('deviceIdIn').value.trim();
             const notes = document.getElementById('notesIn').value.trim();
 
             if (!deviceId) {
                 showError('Please enter a device ID');
                 return;
             }
+
+            // Auto-format the device ID
+            deviceId = formatDeviceId(deviceId);
 
             if (!confirm(`Are you sure you want to retire device ${deviceId}? This action marks the scanner as permanently out of service.`)) {
                 return;
@@ -1418,6 +1521,66 @@
             }, 5000);
         }
 
+        // Export Activity Log to Excel
+        function exportToExcel() {
+            if (scannerData.length === 0) {
+                showError('No data to export');
+                return;
+            }
+
+            // Prepare data for export
+            const exportData = scannerData.map(row => ({
+                'Timestamp': row.Timestamp,
+                'Action': row.Action,
+                'Processed By': row.ProcessedBy,
+                'Device ID': row.DeviceID,
+                'Checked Out To': row.Associate || '-',
+                'Department': row.Department || '-',
+                'Condition': row.Condition,
+                'Returned': row.Returned || '-',
+                'Notes': row.Notes || '-'
+            }));
+
+            // Convert to CSV format
+            const headers = ['Timestamp', 'Action', 'Processed By', 'Device ID', 'Checked Out To', 'Department', 'Condition', 'Returned', 'Notes'];
+            let csv = headers.join(',') + '\n';
+
+            exportData.forEach(row => {
+                const values = headers.map(header => {
+                    let value = row[header] || '';
+                    // Escape commas and quotes in values
+                    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                        value = '"' + value.replace(/"/g, '""') + '"';
+                    }
+                    return value;
+                });
+                csv += values.join(',') + '\n';
+            });
+
+            // Create blob and download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            // Generate filename with current date
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+            }).replace(/\//g, '-');
+            const filename = `Scanner_Activity_Log_${dateStr}.csv`;
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showSuccess(`Activity log exported successfully as ${filename}`);
+        }
+
         // Refresh data every 30 seconds
         setInterval(() => {
             if (SHEET_ID && currentUser) {
@@ -1431,9 +1594,9 @@
                 {
                     Timestamp: new Date(Date.now() - 3600000).toISOString(),
                     Action: 'Out',
-                    ProcessedBy: 'John Supervisor',
-                    DeviceID: 'SCAN001',
-                    Associate: 'Mary Worker',
+                    ProcessedBy: 'JOHN SUPERVISOR',
+                    DeviceID: 'NJ3RF01',
+                    Associate: 'MARY WORKER',
                     Department: 'Ecom',
                     Condition: 'Working',
                     Returned: '',
@@ -1442,9 +1605,9 @@
                 {
                     Timestamp: new Date(Date.now() - 7200000).toISOString(),
                     Action: 'Out',
-                    ProcessedBy: 'Sarah Manager',
-                    DeviceID: 'SCAN002',
-                    Associate: 'Bob Associate',
+                    ProcessedBy: 'SARAH MANAGER',
+                    DeviceID: 'NJ3RF02',
+                    Associate: 'BOB ASSOCIATE',
                     Department: 'B2B',
                     Condition: 'Fair',
                     Returned: '',
@@ -1453,6 +1616,62 @@
             ];
             processData();
         }
+
+        // DOMContentLoaded - Initialize everything
+        document.addEventListener('DOMContentLoaded', () => {
+            // Login enter key
+            document.getElementById('loginName').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+            
+            // AUTO-UPPERCASE ALL TEXT INPUTS (except login name)
+            const textInputs = [
+                'deviceIdOut',
+                'associateOut',
+                'deviceIdIn',
+                'newDeviceId',
+                'newDeviceSerial',
+                'newDeviceModel'
+            ];
+            
+            textInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('input', function() {
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        this.value = this.value.toUpperCase();
+                        this.setSelectionRange(start, end);
+                    });
+                }
+            });
+            
+            // AUTO-FORMAT DEVICE IDs on blur
+            // Check Out Device ID
+            document.getElementById('deviceIdOut').addEventListener('blur', function() {
+                if (this.value.trim()) {
+                    this.value = formatDeviceId(this.value);
+                }
+            });
+            
+            // Check In Device ID
+            document.getElementById('deviceIdIn').addEventListener('blur', function() {
+                if (this.value.trim()) {
+                    this.value = formatDeviceId(this.value);
+                }
+            });
+            
+            // Add New Device ID
+            document.getElementById('newDeviceId').addEventListener('blur', function() {
+                if (this.value.trim()) {
+                    this.value = formatDeviceId(this.value);
+                }
+            });
+            
+            checkExistingLogin();
+        });
     </script>
 </body>
 </html>
