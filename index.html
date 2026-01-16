@@ -958,51 +958,66 @@
             updateActivityLogTable();
         }
 
-        function updateMetrics() {
-            // Build a map of the LATEST status for each device
-            const deviceMap = new Map();
-            
-            scannerData.forEach(row => {
-                const deviceId = row.DeviceID;
-                const timestamp = new Date(row.Timestamp);
-                
-                if (!deviceMap.has(deviceId) || timestamp > new Date(deviceMap.get(deviceId).Timestamp)) {
-                    deviceMap.set(deviceId, row);
-                }
-            });
-            
-            const allDevices = Array.from(deviceMap.values());
-            
-            // Retired devices
-            const retiredDevices = allDevices.filter(d => d.Action === 'Retired');
-            
-            // Active devices (not retired)
-            const activeDevices = allDevices.filter(d => d.Action !== 'Retired');
-            
-            // Currently Out = devices with Action='Out' AND no Returned timestamp
-            const currentlyOut = activeDevices.filter(d => 
-                d.Action === 'Out' && (!d.Returned || d.Returned === '')
-            );
-            
-            // Available = active devices that are either:
-            // 1. Action='Added' (newly added, never checked out)
-            // 2. Action='Out' but HAS a Returned timestamp (checked in)
-            const available = activeDevices.filter(d => 
-                d.Action === 'Added' || 
-                (d.Action === 'Out' && d.Returned && d.Returned !== '')
-            );
-            
-            // Needs Repair = currently out devices with "Needs Repair" condition
-            const needsRepair = currentlyOut.filter(d => 
-                d.Condition === 'Needs Repair'
-            );
-
-            document.getElementById('totalActive').textContent = activeDevices.length;
-            document.getElementById('currentlyOut').textContent = currentlyOut.length;
-            document.getElementById('available').textContent = available.length;
-            document.getElementById('needsRepair').textContent = needsRepair.length;
-            document.getElementById('retired').textContent = retiredDevices.length;
+       function updateMetrics() {
+    // Build a map of the LATEST status for each device
+    const deviceMap = new Map();
+    
+    scannerData.forEach(row => {
+        const deviceId = row.DeviceID;
+        const timestamp = new Date(row.Timestamp);
+        
+        if (!deviceMap.has(deviceId) || timestamp > new Date(deviceMap.get(deviceId).Timestamp)) {
+            deviceMap.set(deviceId, row);
         }
+    });
+    
+    const allDevices = Array.from(deviceMap.values());
+    
+    // DEBUG: Log all unique devices
+    console.log('=== DEBUG: Total Unique Devices ===');
+    console.log('Total unique devices found:', allDevices.length);
+    
+    // Retired devices
+    const retiredDevices = allDevices.filter(d => d.Action === 'Retired');
+    console.log('Retired devices:', retiredDevices.length);
+    
+    // Active devices (not retired)
+    const activeDevices = allDevices.filter(d => d.Action !== 'Retired');
+    console.log('Active devices:', activeDevices.length);
+    
+    // Currently Out = devices with Action='Out' AND no Returned timestamp
+    const currentlyOut = activeDevices.filter(d => 
+        d.Action === 'Out' && (!d.Returned || d.Returned === '')
+    );
+    console.log('Currently Out:', currentlyOut.length);
+    console.log('Currently Out devices:', currentlyOut.map(d => d.DeviceID));
+    
+    // Available = active devices that are either:
+    // 1. Action='Added' (newly added, never checked out)
+    // 2. Action='Out' but HAS a Returned timestamp (checked in)
+    const available = activeDevices.filter(d => 
+        d.Action === 'Added' || 
+        (d.Action === 'Out' && d.Returned && d.Returned !== '')
+    );
+    console.log('Available:', available.length);
+    console.log('Available devices:', available.map(d => `${d.DeviceID} (${d.Action}, Returned: ${d.Returned ? 'Yes' : 'No'})`));
+    
+    // Needs Repair = currently out devices with "Needs Repair" condition
+    const needsRepair = currentlyOut.filter(d => 
+        d.Condition === 'Needs Repair'
+    );
+    console.log('Needs Repair:', needsRepair.length);
+    
+    console.log('=== Verification ===');
+    console.log('Available + Currently Out =', available.length + currentlyOut.length);
+    console.log('Should equal Active Devices =', activeDevices.length);
+
+    document.getElementById('totalActive').textContent = activeDevices.length;
+    document.getElementById('currentlyOut').textContent = currentlyOut.length;
+    document.getElementById('available').textContent = available.length;
+    document.getElementById('needsRepair').textContent = needsRepair.length;
+    document.getElementById('retired').textContent = retiredDevices.length;
+}
 
         function updateCurrentlyOutTable() {
             const tbody = document.querySelector('#currentlyOutTable tbody');
