@@ -539,7 +539,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="deviceIdOut">Device ID *</label>
-                        <input type="text" id="deviceIdOut" placeholder="Enter number (e.g., 01, 23, 42)" required maxlength="10">
+                        <input type="text" id="deviceIdOut" placeholder="Enter number (e.g., 01, 23, 42, RAD01)" required maxlength="10">
                     </div>
                     <div class="form-group">
                         <label for="associateOut">Checked Out To *</label>
@@ -580,7 +580,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="deviceIdIn">Device ID *</label>
-                        <input type="text" id="deviceIdIn" placeholder="Enter number (e.g., 01, 23, 42)" required maxlength="10">
+                        <input type="text" id="deviceIdIn" placeholder="Enter number (e.g., 01, 23, 42, RAD01)" required maxlength="10">
                     </div>
                     <div class="form-group">
                         <label for="conditionIn">Return Condition *</label>
@@ -659,7 +659,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="newDeviceId">Device ID *</label>
-                        <input type="text" id="newDeviceId" placeholder="Enter number (e.g., 01, 23, 42)" required maxlength="10">
+                        <input type="text" id="newDeviceId" placeholder="Enter number (e.g., 01, 23, 42, RAD01)" required maxlength="10">
                     </div>
                     <div class="form-group">
                         <label for="newDeviceCondition">Initial Condition *</label>
@@ -693,7 +693,7 @@
             <div class="form-section" style="margin-top: 2rem;">
                 <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: #2d3748;">💡 Tips for Managing Devices</h3>
                 <ul style="list-style: disc; margin-left: 1.5rem; color: #4a5568; line-height: 1.8;">
-                    <li>Device IDs auto-format to NJ3RF## (just enter the number: 1, 23, 42)</li>
+                    <li>Device IDs auto-format to NJ3RF## or NJ3RAD## (just enter the number: 1, 23, 42, or RAD01)</li>
                     <li>All text automatically converts to uppercase</li>
                     <li>Record serial numbers for warranty and support purposes</li>
                     <li>New devices automatically show as "Available" in inventory</li>
@@ -763,11 +763,21 @@
         // Timezone Configuration - Eastern Time (New Jersey)
         const TIMEZONE = 'America/New_York';
 
+        // List of users authorized to add new devices
+        const AUTHORIZED_DEVICE_MANAGERS = [
+            'ROBERTO',
+            'JIMMY',
+            'KARELY',
+            'SHELBY',
+            'NORMA'            
+            // Add more names as needed (all uppercase)
+        ];
+
         let scannerData = [];
         let currentlyOutData = [];
         let currentUser = null;
 
-        // Auto-format Device ID to NJ3RF## format
+        // Auto-format Device ID to NJ3RF## or NJ3RAD## format
         function formatDeviceId(input) {
             // Remove all non-alphanumeric characters
             let cleaned = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -775,31 +785,35 @@
             // If it starts with NJ3RF, extract just the number part
             if (cleaned.startsWith('NJ3RF')) {
                 let numberPart = cleaned.substring(5); // Get everything after 'NJ3RF'
-                
-                // Remove any non-numeric characters from the number part
                 numberPart = numberPart.replace(/[^0-9]/g, '');
-                
-                // Pad with leading zero if needed (01, 02, etc.)
                 if (numberPart.length === 1) {
                     numberPart = '0' + numberPart;
                 }
-                
                 return 'NJ3RF' + numberPart;
             }
             
-            // If user just typed a number, auto-add NJ3RF prefix
+            // If it starts with NJ3RAD, extract just the number part
+            if (cleaned.startsWith('NJ3RAD')) {
+                let numberPart = cleaned.substring(6); // Get everything after 'NJ3RAD'
+                numberPart = numberPart.replace(/[^0-9]/g, '');
+                if (numberPart.length === 1) {
+                    numberPart = '0' + numberPart;
+                }
+                return 'NJ3RAD' + numberPart;
+            }
+            
+            // If user just typed a number, default to NJ3RF prefix
             if (/^\d+$/.test(cleaned)) {
-                let num = cleaned.padStart(2, '0'); // Pad to 2 digits
+                let num = cleaned.padStart(2, '0');
                 return 'NJ3RF' + num;
             }
             
-            // Otherwise return what they typed (will be validated)
             return cleaned;
         }
 
         // Validate Device ID format
         function validateDeviceId(deviceId) {
-            const pattern = /^NJ3RF\d{2,}$/; // NJ3RF followed by at least 2 digits
+            const pattern = /^(NJ3RF|NJ3RAD)\d{2,}$/; // NJ3RF or NJ3RAD followed by at least 2 digits
             return pattern.test(deviceId);
         }
 
@@ -865,6 +879,19 @@
             document.getElementById('userBadge').style.display = 'inline-flex';
             document.getElementById('logoutBtn').style.display = 'inline-block';
             
+            // Hide Add Device tab if user is not authorized
+            if (!AUTHORIZED_DEVICE_MANAGERS.includes(name.toUpperCase())) {
+                const addDeviceTab = document.querySelector('.tab[onclick*="add-device"]');
+                if (addDeviceTab) {
+                    addDeviceTab.style.display = 'none';
+                }
+            } else {
+                const addDeviceTab = document.querySelector('.tab[onclick*="add-device"]');
+                if (addDeviceTab) {
+                    addDeviceTab.style.display = 'block';
+                }
+            }
+            
             // Load data if SHEET_ID is configured
             if (SHEET_ID) {
                 loadDataFromGoogleSheets();
@@ -897,6 +924,14 @@
                 document.getElementById('logoutBtn').style.display = 'inline-block';
                 document.getElementById('loginModal').classList.remove('active');
                 
+                // Hide Add Device tab if user is not authorized
+                if (!AUTHORIZED_DEVICE_MANAGERS.includes(savedUser.toUpperCase())) {
+                    const addDeviceTab = document.querySelector('.tab[onclick*="add-device"]');
+                    if (addDeviceTab) {
+                        addDeviceTab.style.display = 'none';
+                    }
+                }
+                
                 // Load data
                 if (SHEET_ID) {
                     loadDataFromGoogleSheets();
@@ -919,7 +954,14 @@
 
             // Show selected tab
             document.getElementById(`tab-${tabName}`).classList.add('active');
-            event.target.classList.add('active');
+            
+            // Find and activate the clicked tab button
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                if (tab.getAttribute('onclick') && tab.getAttribute('onclick').includes(tabName)) {
+                    tab.classList.add('active');
+                }
+            });
         }
 
         // Load data from Google Sheets via Apps Script (avoids CORS)
@@ -1062,11 +1104,14 @@
             console.log('  - Added (never checked out):', activeDevices.filter(d => d.Action === 'Added').length);
             console.log('  - Checked out then returned:', activeDevices.filter(d => d.Action === 'Out' && d.Returned && d.Returned !== '').length);
             
-            // Needs Repair = currently out devices with "Needs Repair" condition
-            const needsRepair = currentlyOut.filter(d => 
+            // FIXED: Needs Repair = ALL active devices with "Needs Repair" condition (both out and available)
+            const needsRepair = activeDevices.filter(d => 
                 d.Condition === 'Needs Repair'
             );
             console.log('Needs Repair:', needsRepair.length);
+            if (needsRepair.length > 0) {
+                console.log('Needs Repair devices:', needsRepair.map(d => `${d.DeviceID} (${d.Action === 'Out' && !d.Returned ? 'Out' : 'Available'})`));
+            }
             
             console.log('=== Verification ===');
             console.log('Available + Currently Out =', available.length + currentlyOut.length);
@@ -1213,6 +1258,12 @@
                 return;
             }
 
+            // Check if user is authorized to add devices
+            if (!AUTHORIZED_DEVICE_MANAGERS.includes(currentUser.toUpperCase())) {
+                showError('You do not have permission to add new devices. Please contact your supervisor.');
+                return;
+            }
+
             let deviceId = document.getElementById('newDeviceId').value.trim();
             const condition = document.getElementById('newDeviceCondition').value;
             const serial = document.getElementById('newDeviceSerial').value.trim();
@@ -1229,7 +1280,7 @@
             
             // Validate format
             if (!validateDeviceId(deviceId)) {
-                showError('Invalid Device ID format. Must be NJ3RF## (e.g., NJ3RF01, NJ3RF02)');
+                showError('Invalid Device ID format. Must be NJ3RF## or NJ3RAD## (e.g., NJ3RF01, NJ3RAD02)');
                 document.getElementById('newDeviceId').value = deviceId;
                 document.getElementById('newDeviceId').focus();
                 return;
@@ -1304,7 +1355,7 @@
             
             // Validate format
             if (!validateDeviceId(deviceId)) {
-                showError('Invalid Device ID format. Must be NJ3RF## (e.g., NJ3RF01, NJ3RF02)');
+                showError('Invalid Device ID format. Must be NJ3RF## or NJ3RAD## (e.g., NJ3RF01, NJ3RAD02)');
                 document.getElementById('deviceIdOut').value = deviceId; // Show what was formatted
                 document.getElementById('deviceIdOut').focus();
                 return;
@@ -1365,7 +1416,7 @@
             
             // Validate format
             if (!validateDeviceId(deviceId)) {
-                showError('Invalid Device ID format. Must be NJ3RF## (e.g., NJ3RF01, NJ3RF02)');
+                showError('Invalid Device ID format. Must be NJ3RF## or NJ3RAD## (e.g., NJ3RF01, NJ3RAD02)');
                 document.getElementById('deviceIdIn').value = deviceId;
                 document.getElementById('deviceIdIn').focus();
                 return;
