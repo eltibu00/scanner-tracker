@@ -848,11 +848,10 @@
 
         // List of users authorized to add new devices
         const AUTHORIZED_DEVICE_MANAGERS = [
-            'ROBERTO TIBURCIO',
-            'JIMMY VIVAR',
-            'KARELY MARROQUIN',
-            'SHELBY CAMARILLO',
-            'NORMA TEJADA'
+            'ROBERTO',
+            'YOALI',
+            'MARIA',
+            'SHELBY'
         ];
 
         let allDeviceData = [];
@@ -872,12 +871,14 @@
             
             if (cleaned.startsWith('NJ3RF')) {
                 let numberPart = cleaned.substring(5).replace(/[^0-9]/g, '');
+                // Only pad if it's a single digit, otherwise preserve the length
                 if (numberPart.length === 1) numberPart = '0' + numberPart;
                 return 'NJ3RF' + numberPart;
             }
             
             if (cleaned.startsWith('NJ3RAD')) {
                 let numberPart = cleaned.substring(6).replace(/[^0-9]/g, '');
+                // Only pad if it's a single digit, otherwise preserve the length
                 if (numberPart.length === 1) numberPart = '0' + numberPart;
                 return 'NJ3RAD' + numberPart;
             }
@@ -885,13 +886,16 @@
             // Check if it starts with RAD (user shorthand for radio)
             if (cleaned.startsWith('RAD')) {
                 let numberPart = cleaned.substring(3).replace(/[^0-9]/g, '');
+                // Only pad if it's a single digit, otherwise preserve the length
                 if (numberPart.length === 1) numberPart = '0' + numberPart;
                 return 'NJ3RAD' + numberPart;
             }
             
             // If user just typed a number, default to NJ3RF prefix (scanner)
             if (/^\d+$/.test(cleaned)) {
-                let num = cleaned.padStart(2, '0');
+                // Preserve the original length - don't modify 3+ digit numbers
+                // Only pad single digits to 2 digits (1 -> 01)
+                let num = cleaned.length === 1 ? '0' + cleaned : cleaned;
                 return 'NJ3RF' + num;
             }
             
@@ -900,6 +904,7 @@
 
         // Validate Device ID format
         function validateDeviceId(deviceId) {
+            // Accept NJ3RF or NJ3RAD followed by 2 or more digits (allows 033, 099, etc.)
             const pattern = /^(NJ3RF|NJ3RAD)\d{2,}$/;
             return pattern.test(deviceId);
         }
@@ -1045,6 +1050,9 @@
                 const data = await response.json();
                 
                 if (data.success && data.data) {
+                    console.log('=== RAW DATA FROM GOOGLE SHEETS ===');
+                    console.log('Total rows received:', data.data.length);
+                    
                     allDeviceData = data.data.map(row => ({
                         Timestamp: row[0] || '',
                         Action: row[1] || '',
@@ -1056,6 +1064,20 @@
                         Returned: row[7] || '',
                         Notes: row[8] || ''
                     })).filter(row => row.DeviceID);
+                    
+                    console.log('Total valid rows after filtering:', allDeviceData.length);
+                    console.log('All Device IDs from backend:', allDeviceData.map(d => d.DeviceID).sort());
+                    
+                    // Check for suspicious device IDs
+                    const suspiciousDevices = allDeviceData.filter(d => {
+                        const id = d.DeviceID;
+                        return id.includes('73') || id.includes('74') || id.includes('75') || id.includes('76') || id.includes('493');
+                    });
+                    
+                    if (suspiciousDevices.length > 0) {
+                        console.warn('⚠️ SUSPICIOUS DEVICES FOUND IN BACKEND DATA:');
+                        console.table(suspiciousDevices);
+                    }
                     
                     processAllData();
                 } else {
@@ -1080,6 +1102,9 @@
         }
 
         function updateAllTables() {
+            console.log('=== UPDATE ALL TABLES DEBUG ===');
+            console.log('Total devices in allDeviceData:', allDeviceData.length);
+            
             // Build latest status map
             const deviceMap = new Map();
             
@@ -1099,10 +1124,17 @@
             });
 
             const allDevices = Array.from(deviceMap.values());
+            console.log('Unique devices after deduplication:', allDevices.length);
+            console.log('Unique device IDs:', Array.from(deviceMap.keys()).sort());
             
             // Separate scanners and radios
             const scanners = allDevices.filter(d => getDeviceType(d.DeviceID) === 'Scanner');
             const radios = allDevices.filter(d => getDeviceType(d.DeviceID) === 'Radio');
+            
+            console.log('Scanner count:', scanners.length);
+            console.log('Scanner IDs:', scanners.map(s => s.DeviceID).sort());
+            console.log('Radio count:', radios.length);
+            console.log('Radio IDs:', radios.map(r => r.DeviceID).sort());
 
             // Update scanner metrics and tables
             updateDeviceTypeMetrics(scanners, 'scanner');
