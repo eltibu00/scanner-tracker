@@ -477,7 +477,7 @@
             color: #1e40af;
         }
 
-        .device-radio {
+        .device-walkie-talkie {
             background: #fce7f3;
             color: #9f1239;
         }
@@ -485,8 +485,8 @@
 </head>
 <body>
     <div class="header">
-        <h1>📱 📻 NJ3 Device Tracker</h1>
-        <p>Scanners & Radios Management System</p>
+        <h1>📱 📡 NJ3 Device Tracker</h1>
+        <p>Scanners & Walkie-Talkies Management System</p>
         <div class="header-user-info">
             <span class="user-badge" id="userBadge" style="display: none;">
                 👤 <span id="currentUserName"></span>
@@ -521,7 +521,7 @@
         <div class="tabs">
             <button class="tab active" onclick="showTab('checkout')">Check Out/In</button>
             <button class="tab" onclick="showTab('scanners')">📱 Scanners</button>
-            <button class="tab" onclick="showTab('radios')">📻 Radios</button>
+            <button class="tab" onclick="showTab('radios')">📡 Walkie-Talkies</button>
             <button class="tab" onclick="showTab('add-device')">Add Device</button>
             <button class="tab" onclick="showTab('retired')">Retired Devices</button>
             <button class="tab" onclick="showTab('activity-log')">Activity Log</button>
@@ -534,8 +534,8 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="deviceIdOut">Device ID *</label>
-                        <input type="text" id="deviceIdOut" placeholder="Enter number (e.g., 01 for scanner, RAD01 for radio)" required maxlength="10">
-                        <small style="color: #718096; margin-top: 0.25rem;">Scanners: NJ3RF## | Radios: NJ3RAD##</small>
+                        <input type="text" id="deviceIdOut" placeholder="Enter number (e.g., 01 for scanner, RAD01 for walkie-talkie)" required maxlength="10">
+                        <small style="color: #718096; margin-top: 0.25rem;">Scanners: NJ3RF## | Walkie-Talkies: NJ3RAD##</small>
                     </div>
                     <div class="form-group">
                         <label for="associateOut">Checked Out To *</label>
@@ -576,8 +576,8 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="deviceIdIn">Device ID *</label>
-                        <input type="text" id="deviceIdIn" placeholder="Enter number (e.g., 01 for scanner, RAD01 for radio)" required maxlength="10">
-                        <small style="color: #718096; margin-top: 0.25rem;">Scanners: NJ3RF## | Radios: NJ3RAD##</small>
+                        <input type="text" id="deviceIdIn" placeholder="Enter number (e.g., 01 for scanner, RAD01 for walkie-talkie)" required maxlength="10">
+                        <small style="color: #718096; margin-top: 0.25rem;">Scanners: NJ3RF## | Walkie-Talkies: NJ3RAD##</small>
                     </div>
                     <div class="form-group">
                         <label for="conditionIn">Return Condition *</label>
@@ -666,12 +666,12 @@
             </div>
         </div>
 
-        <!-- Tab 3: Radios (NJ3RAD) -->
+        <!-- Tab 3: Walkie-Talkies (NJ3RAD) -->
         <div id="tab-radios" class="tab-content">
-            <!-- Radio Metrics -->
+            <!-- Walkie-Talkie Metrics -->
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-label">Total Active Radios</div>
+                    <div class="metric-label">Total Active Walkie-Talkies</div>
                     <div class="metric-value info" id="radioTotal">0</div>
                 </div>
                 <div class="metric-card">
@@ -688,9 +688,9 @@
                 </div>
             </div>
 
-            <!-- Currently Out Radios -->
+            <!-- Currently Out Walkie-Talkies -->
             <div class="form-section">
-                <h2 class="section-title">🔴 Radios Currently Checked Out</h2>
+                <h2 class="section-title">🔴 Walkie-Talkies Currently Checked Out</h2>
                 <div style="overflow-x: auto;">
                     <table id="radiosOutTable">
                         <thead>
@@ -709,9 +709,9 @@
                 </div>
             </div>
 
-            <!-- Radio Inventory -->
+            <!-- Walkie-Talkie Inventory -->
             <div class="form-section">
-                <h2 class="section-title">📋 Radio Inventory</h2>
+                <h2 class="section-title">📋 Walkie-Talkie Inventory</h2>
                 <div style="overflow-x: auto;">
                     <table id="radioInventoryTable">
                         <thead>
@@ -734,13 +734,13 @@
         <div id="tab-add-device" class="tab-content">
             <div class="form-section">
                 <h2 class="section-title">➕ Add New Device to Inventory</h2>
-                <p style="margin-bottom: 1.5rem; color: #718096;">Register a new scanner or radio device in the system.</p>
+                <p style="margin-bottom: 1.5rem; color: #718096;">Register a new scanner or walkie-talkie device in the system.</p>
                 
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="newDeviceId">Device ID *</label>
-                        <input type="text" id="newDeviceId" placeholder="Enter number (e.g., 01 for scanner, RAD01 for radio)" required maxlength="10">
-                        <small style="color: #718096; margin-top: 0.25rem;">Scanners: NJ3RF## | Radios: NJ3RAD##</small>
+                        <input type="text" id="newDeviceId" placeholder="Enter number (e.g., 01 for scanner, RAD01 for walkie-talkie)" required maxlength="10">
+                        <small style="color: #718096; margin-top: 0.25rem;">Scanners: NJ3RF## | Walkie-Talkies: NJ3RAD##</small>
                     </div>
                     <div class="form-group">
                         <label for="newDeviceCondition">Initial Condition *</label>
@@ -775,7 +775,7 @@
                 <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: #2d3748;">💡 Tips for Managing Devices</h3>
                 <ul style="list-style: disc; margin-left: 1.5rem; color: #4a5568; line-height: 1.8;">
                     <li><strong>Scanners:</strong> Type just the number (e.g., "01") - auto-formats to NJ3RF01</li>
-                    <li><strong>Radios:</strong> Type "RAD" + number (e.g., "RAD01") - auto-formats to NJ3RAD01</li>
+                    <li><strong>Walkie-Talkies:</strong> Type "RAD" + number (e.g., "RAD01") - auto-formats to NJ3RAD01</li>
                     <li>All text automatically converts to uppercase</li>
                     <li>Record serial numbers for warranty and support purposes</li>
                     <li>New devices automatically show as "Available" in inventory</li>
@@ -860,7 +860,7 @@
         // Helper function to determine device type
         function getDeviceType(deviceId) {
             const upper = deviceId.toUpperCase();
-            if (upper.startsWith('NJ3RAD')) return 'Radio';
+            if (upper.startsWith('NJ3RAD')) return 'Walkie-Talkie';
             if (upper.startsWith('NJ3RF')) return 'Scanner';
             return 'Unknown';
         }
@@ -1127,9 +1127,9 @@
             console.log('Unique devices after deduplication:', allDevices.length);
             console.log('Unique device IDs:', Array.from(deviceMap.keys()).sort());
             
-            // Separate scanners and radios
+            // Separate scanners and walkie-talkies
             const scanners = allDevices.filter(d => getDeviceType(d.DeviceID) === 'Scanner');
-            const radios = allDevices.filter(d => getDeviceType(d.DeviceID) === 'Radio');
+            const radios = allDevices.filter(d => getDeviceType(d.DeviceID) === 'Walkie-Talkie');
             
             console.log('Scanner count:', scanners.length);
             console.log('Scanner IDs:', scanners.map(s => s.DeviceID).sort());
